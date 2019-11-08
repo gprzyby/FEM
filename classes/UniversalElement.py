@@ -50,14 +50,15 @@ class UniversalElement:
         jacobian.itemset((0, 1), np.dot(self.__dN_dksi_matrix[element_num],np.array([y_arr]).transpose())[0])    # dy_dksi
         return jacobian
 
-    @staticmethod
-    def integral_gauss_3(function, x_beg, x_end):
-        gauss_points = [gauss[0] for gauss in funConst.gauss_points[1]]
-        gauss_weights = [gauss[1] for gauss in funConst.gauss_points[1]]
-        det_jacobian = funConst.shape1d_dksi[0] * x_beg + funConst.shape1d_dksi[1] * x_end
+    @property
+    def dN_dKsi(self):
+        return self.__dN_dksi_matrix
 
-        global_points = [funConst.shape1d_fun[0](point) * x_beg + funConst.shape1d_fun[1](point) * x_end for point in gauss_points]
+    @property
+    def dN_dEta(self):
+        return self.__dN_deta_matrix
 
-        integral = sum([function(glob_point) * weight for glob_point, weight in zip(global_points, gauss_weights)]) * det_jacobian
+    @property
+    def N(self):
+        return self.__N_matrix
 
-        return integral
