@@ -39,15 +39,14 @@ class UniversalElement:
             for shape_fun_num, element in enumerate(array):
                 np.put(array, shape_fun_num, funConst.shape2d_fun[shape_fun_num](ksi=ksi, eta=eta))
 
-    def jacobian_matrix(self, element: Element, element_num):
+    def jacobian_matrix(self, element: Element, integral_point_id):
         #creating matrices from element points
         jacobian = np.zeros(shape=(2, 2))
         x_arr, y_arr = element.points_coordinates_matrix()
-        print(np.dot(self.__dN_dksi_matrix[0],np.array([x_arr]).transpose())[0])
-        jacobian.itemset((0, 0), np.dot(self.__dN_dksi_matrix[element_num],np.array([x_arr]).transpose())[0])    # dx_dksi
-        jacobian.itemset((1, 0), np.dot(self.__dN_deta_matrix[element_num],np.array([x_arr]).transpose())[0])    # dx_deta
-        jacobian.itemset((1, 1), np.dot(self.__dN_deta_matrix[element_num],np.array([y_arr]).transpose())[0])    # dy_deta
-        jacobian.itemset((0, 1), np.dot(self.__dN_dksi_matrix[element_num],np.array([y_arr]).transpose())[0])    # dy_dksi
+        jacobian.itemset((0, 0), np.dot(self.__dN_dksi_matrix[integral_point_id], np.array([x_arr]).transpose())[0])    # dx_dksi
+        jacobian.itemset((1, 0), np.dot(self.__dN_deta_matrix[integral_point_id], np.array([x_arr]).transpose())[0])    # dx_deta
+        jacobian.itemset((1, 1), np.dot(self.__dN_deta_matrix[integral_point_id], np.array([y_arr]).transpose())[0])    # dy_deta
+        jacobian.itemset((0, 1), np.dot(self.__dN_dksi_matrix[integral_point_id], np.array([y_arr]).transpose())[0])    # dy_dksi
         return jacobian
 
     @property
