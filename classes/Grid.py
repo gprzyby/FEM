@@ -59,6 +59,9 @@ class Grid:
     def __str__(self):
         return "Grid"
 
+    def get_spec(self):
+        return self.__data
+
     @classmethod
     def LoadFromData(cls, path: str):
         with open(path, "r") as file:

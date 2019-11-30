@@ -18,12 +18,16 @@ if __name__ == "__main__":
     #test for calculating element field
     nodes = [ Node(0, 0, 0, BC=True),
               Node(1, 0.025, 0, BC=True),
-              Node(2, 0.025, 0.025, BC=False),
+              Node(2, 0.025, 0.025, BC=True),
               Node(3, 0, 0.025, BC=False) ]
     element = Element(0, 4, nodes)
     print("Element field: {}".format(calc.calculateElementField(element, uniElem)))
     print(calc.calculate_h_matrix(element, uniElem, 30., 25))
     print(calc.calculate_c_matrix(element, uniElem, 7800, 700))
-
-
+    print(calc.calculate_p_matrix(element, uniElem, 25, 1))
+    test_grid = Grid(4, 4, 0.1, 0.1)
+    print(calc.calculate_h_global(test_grid, uniElem, 25, 300))
+    print(calc.calculate_c_global(test_grid, uniElem, 7800, 700))
+    print(calc.calculate_p_global(test_grid, uniElem, 300, 1200))
+    calc.simulate_heat_transfer(Grid(31, 31, 0.1, 0.1), 100, 100, 1, 1200, 300, 700, 25, 7800)
 

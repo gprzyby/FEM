@@ -10,7 +10,7 @@ class Node(object):
 
     @property
     def id(self):
-        return self.__x
+        return self.__id
 
     @id.setter
     def id(self, new_value: float):
