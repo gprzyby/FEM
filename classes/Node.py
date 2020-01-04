@@ -34,11 +34,11 @@ class Node(object):
 
     @property
     def value(self):
-        return self.__y
+        return self.__value
 
     @value.setter
     def value(self, new_value: float):
-        self.__y = new_value
+        self.__value = new_value
 
     @property
     def BC(self):

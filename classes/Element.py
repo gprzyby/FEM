@@ -35,7 +35,7 @@ class Element(object):
     def __repr__(self):
         return str(self)
 
-    def points_coordinates_matrix(self):
+    def points_coordinates_vector(self):
         x = [node.x for node in self.__nodes]
         y = [node.y for node in self.__nodes]
         return x, y

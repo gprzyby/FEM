@@ -42,7 +42,7 @@ class UniversalElement:
     def jacobian_matrix(self, element: Element, integral_point_id):
         #creating matrices from element points
         jacobian = np.zeros(shape=(2, 2))
-        x_arr, y_arr = element.points_coordinates_matrix()
+        x_arr, y_arr = element.points_coordinates_vector()
         jacobian.itemset((0, 0), np.dot(self.__dN_dksi_matrix[integral_point_id], np.array([x_arr]).transpose())[0])    # dx_dksi
         jacobian.itemset((1, 0), np.dot(self.__dN_deta_matrix[integral_point_id], np.array([x_arr]).transpose())[0])    # dx_deta
         jacobian.itemset((1, 1), np.dot(self.__dN_deta_matrix[integral_point_id], np.array([y_arr]).transpose())[0])    # dy_deta
