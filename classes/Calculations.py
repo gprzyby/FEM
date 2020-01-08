@@ -8,14 +8,15 @@ import numpy as np
 
 def __calculate_property_for_integral_points(elem: Element, univ_el: UniversalElement, layer_info: dict,
                                              property_name: str) -> list:
-    property_for_ip = []
-    pos_x_for_ip = []
-    x_pos, _ = elem.points_coordinates_vector()
+    property_for_ip = []    # table to collect property value for integral point
+    pos_x_for_ip = []       # table to store real x position of integral point
+    x_pos, _ = elem.points_coordinates_vector()     # getting x coordinates of element nodes
 
     # calculating global pos of integral points(here only x coord)
     for shape_fun_vector in univ_el.N:
         pos_x_for_ip.append(np.dot(shape_fun_vector, np.asarray([x_pos]).reshape(len(univ_el.N), 1))[0])
 
+    # now we go thought each layer and checking if ip is in specified layer
     for integral_id in range(len(univ_el.N)):
         act_layer_border = 0.
         for i, [layer_thickness, layer_properties] in enumerate(layer_info):
@@ -91,12 +92,12 @@ def calculate_h_boundary_matrix(elem: Element, boundaries_info: dict):
     for key, nodes in edges_with_bc.items():
         edges_jacobians[key] = distance_between_nodes(nodes) / 2.
 
-    # creating form functions for 1d
+    # creating vector of form functions for 1d
     N_dot_NT = np.zeros(shape=(2, 2))
     for integral_point in [consts.gauss_points[0][0][0], consts.gauss_points[0][1][0]]:
         N_1d = np.array([[consts.shape1d_fun[0](integral_point), consts.shape1d_fun[1](integral_point)]])
         temp = np.dot(np.transpose([N_1d]), N_1d)
-        N_dot_NT += np.dot(np.transpose(N_1d), N_1d) * 1 * 1  # * detJ make later
+        N_dot_NT += np.dot(np.transpose(N_1d), N_1d) * 1 * 1  # * detJ made later
 
     # combining matrices
     H_bc = np.zeros(shape=(4, 4))
@@ -105,7 +106,7 @@ def calculate_h_boundary_matrix(elem: Element, boundaries_info: dict):
             H_bc[bc_index:bc_index + 2, bc_index:bc_index + 2] += N_dot_NT * edges_jacobians[bc_index] * \
                                                                   boundaries_info[bc_index]["alpha"]
         else:
-            H_bc[0:4:3, 0:4:3] += N_dot_NT * edges_jacobians[bc_index] * boundaries_info[bc_index]["alpha"]
+            H_bc[::-3, ::-3] += N_dot_NT * edges_jacobians[bc_index] * boundaries_info[bc_index]["alpha"]
 
     return H_bc
 
@@ -113,45 +114,42 @@ def calculate_h_boundary_matrix(elem: Element, boundaries_info: dict):
 def calculate_h_matrix(elem: Element, univElem: UniversalElement, layer_info: dict, boundaries_info: dict):
     # creating jacobians for every integral point
     jacobians = [univElem.jacobian_matrix(elem, n) for n in range(4)]
-
-    # calculating conductivity and alpha for each integral point
+    # calculating conductivity for each integral point
     conductivity_for_ip = __calculate_property_for_integral_points(elem, univElem, layer_info, "conductivity")
-
-    h = []
+    h = []  # list to store H matrix calculated in every integral point
     for ip_number, node_i in enumerate(range(4)):  # for 4 integral points
         # calculating dN_dx, dN_dy for every integral point
         dN_dx = []
         dN_dy = []
         for n_i in range(4):  # for 4 shape functions
-            # making matrix of [[dN_dksi], [dN_deta]]
+            # making vectors of [[dN_dksi], [dN_deta]] from jacobian transfer matrix
             temp = np.array([univElem.dN_dKsi[node_i][n_i], univElem.dN_dEta[node_i][n_i]]).reshape((2, 1))
             matrix_dn_dx_dy = np.dot(np.linalg.inv(jacobians[node_i]), temp)
             dN_dx.append(matrix_dn_dx_dy[0][0])
             dN_dy.append(matrix_dn_dx_dy[1][0])
-
+        # migrating to numpy horizontal vectors
         matrix_dN_dx = np.array([dN_dx])
         matrix_dN_dy = np.array([dN_dy])
-
+        # calculating H matrix for integral point
         temp = np.dot(np.transpose(matrix_dN_dx), matrix_dN_dx) + np.dot(np.transpose(matrix_dN_dy), matrix_dN_dy)
         temp *= conductivity_for_ip[ip_number]
         h.append(temp)
 
     h_without_bc = matrix_integral(jacobians, h)
-
     return h_without_bc + calculate_h_boundary_matrix(elem, boundaries_info)
 
 
 def calculate_c_matrix(elem: Element, univ_elem: UniversalElement, layer_info: dict):
     # creating jacobians for every integral point
     jacobians = [univ_elem.jacobian_matrix(elem, n) for n in range(4)]
-    n_matrix = univ_elem.N
+    n_matrix = univ_elem.N  # getting N matrix from universal element
     density_for_ip = __calculate_property_for_integral_points(elem, univ_elem, layer_info, "density")
     specific_heat_for_ip = __calculate_property_for_integral_points(elem, univ_elem, layer_info, "specific_heat")
-
+    # list to store C matrices calculated for every integral point
     c_matrices = []
-
-    for density_in_ip, specific_heat_in_ip, point_n_matrix in zip(density_for_ip, specific_heat_for_ip, n_matrix):
-        tmp = np.dot(np.transpose(np.array([point_n_matrix])), np.array([point_n_matrix]))
+    # calculating C matrix for every integral point
+    for density_in_ip, specific_heat_in_ip, n_vector in zip(density_for_ip, specific_heat_for_ip, n_matrix):
+        tmp = np.dot(np.transpose(np.array([n_vector])), np.array([n_vector]))
         tmp *= density_in_ip * specific_heat_in_ip
         c_matrices.append(tmp)
 
@@ -184,7 +182,7 @@ def calculate_p_matrix(elem: Element, univ_elem: UniversalElement, boundaries_in
             P[bc_index:bc_index + 2, 0:1] += N * edges_jacobians[bc_index] * boundaries_info[bc_index]["alpha"] * \
                                              boundaries_info[bc_index]["ambient_temp"]
         else:
-            P[0:4:3, 0:1] += N * edges_jacobians[bc_index] * boundaries_info[bc_index]["alpha"] * \
+            P[::-3, 0:1] += N * edges_jacobians[bc_index] * boundaries_info[bc_index]["alpha"] * \
                              boundaries_info[bc_index]["ambient_temp"]
 
     P *= -1
@@ -192,14 +190,15 @@ def calculate_p_matrix(elem: Element, univ_elem: UniversalElement, boundaries_in
 
 
 def calculate_h_global(grid: Grid, univ_elem: UniversalElement, layer_info: dict, boundaries_info: dict):
+    # creating global matrix with mNxmN size(num_nodes_in_grid x num_nodes_in_grid)
     global_h = np.zeros(shape=(grid.get_spec().mN, grid.get_spec().mN))
-
+    # iterating over every element in grid
     for i in range(grid.get_spec().mE):
         element = grid.getElement(i + 1)
         local_h = calculate_h_matrix(element, univ_elem, layer_info, boundaries_info)
-
+        # list to store id of element nodes corresponding to shape function order
         indexes = [element[i].id - 1 for i in range(4)]  # -1 to align with matrix indexing
-
+        # aggregating matrix
         for local_row_index, global_row_index in zip(range(4), indexes):
             for local_column_index, global_column_index in zip(range(4), indexes):
                 global_h[global_row_index, global_column_index] += local_h[local_row_index, local_column_index]
@@ -239,14 +238,14 @@ def calculate_p_global(grid: Grid, univ_ele: UniversalElement, boundaries_info: 
     return global_p
 
 
-def simulate_heat_transfer(grid: Grid, initial_temp: float, simulation_time: float, step_time: float, layer_info: dict,
+def simulate_heat_transfer(grid: Grid, initial_temp: float, simulation_time: float, step_time: float, layer_info: list,
                            boundaries_info: dict):
+    #vector t0
     nodes_temp = np.array([[initial_temp for _ in range(grid.get_spec().mN)]]).reshape((grid.get_spec().mN, 1))
     univ_elem = UniversalElement()
     steps = (int)(simulation_time / step_time)
-
+    #list to store simulation time in every step
     steps_times = [(step + 1) * step_time for step in range(steps)]
-
     for step in steps_times:
         global_h = calculate_h_global(grid, univ_elem, layer_info, boundaries_info)
         global_c = calculate_c_global(grid, univ_elem, layer_info)
@@ -254,12 +253,11 @@ def simulate_heat_transfer(grid: Grid, initial_temp: float, simulation_time: flo
         global_p *= -1
         global_c *= 1 / step_time
         global_h += global_c
-        global_p += np.dot(global_c, nodes_temp)
-        nodes_temp = np.dot(np.linalg.inv(global_h), global_p)
+        global_p_temp = global_p + np.dot(global_c, nodes_temp)
+        nodes_temp = np.dot(np.linalg.inv(global_h), global_p_temp)
         print("Step time: {}\tMin temp: {}\tMax temp: {}".format(step, np.amin(nodes_temp), np.amax(nodes_temp)))
-
     # upgrade grid with temperatures
     for node_id, temp in enumerate(nodes_temp):
         grid.getNode(node_id + 1).value = temp[0]
-
     return nodes_temp
+

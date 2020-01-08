@@ -35,7 +35,7 @@ class Grid:
         for x in range(n_horizontal_nodes):
             for y in range(n_vertical_nodes):
                 #border control
-                if (x == 0 or x == n_vertical_nodes - 1) or (y == 0 or y == n_horizontal_nodes - 1):
+                if (x == 0 or x == n_horizontal_nodes - 1) or (y == 0 or y == n_vertical_nodes - 1):
                     self.__nodes.append(Node(id, x * element_width, y * element_height, BC=True))
                 else:
                     self.__nodes.append(Node(id, x * element_width, y * element_height, BC=False))
@@ -46,9 +46,9 @@ class Grid:
         for x in range(n_horizontal_nodes - 1):
             for y in range(n_vertical_nodes - 1):
                 id = y + x * n_vertical_nodes
-                node_list = [self.__nodes[id], \
-                             self.__nodes[n_vertical_nodes + id], \
-                             self.__nodes[n_vertical_nodes + id + 1], \
+                node_list = [self.__nodes[id],
+                             self.__nodes[n_vertical_nodes + id],
+                             self.__nodes[n_vertical_nodes + id + 1],
                              self.__nodes[id + 1]]
                 self.__elements.append(Element(elem_id, 4, node_list))
                 elem_id += 1
@@ -68,30 +68,28 @@ class Grid:
     @classmethod
     def LoadFromData(cls, path: str):
         with open(path, "r") as file:
-            input = json.load(file)
-            gridInfo = cls.__grid_data(**input)
+            input_grid_data = json.load(file)
 
-        return cls(gridInfo.mW, gridInfo.mH, gridInfo.W, gridInfo.H)
+        return cls(input_grid_data["N_W"], input_grid_data["N_H"], input_grid_data["W"], input_grid_data["H"])
 
     def saveToJson(self, path: str):
         with open(path, 'w') as file:
             json.dump(self.__data.__dict__, file)
 
     def saveToVTK(self, path: str):
-        x_coords = [node.x for node in self.__nodes[::self.__data.mW]]
+        x_coords = [node.x for node in self.__nodes[::self.__data.mH]]
         y_coords = [node.y for node in self.__nodes[:self.__data.mH:]]
         temp = [node.value for node in self.__nodes]
 
         x = np.zeros((self.__data.mW, self.__data.mH, 1))
         y = np.zeros((self.__data.mW, self.__data.mH, 1))
         z = np.zeros((self.__data.mW, self.__data.mH, 1))
+        temp_matrix = np.asarray(temp).reshape((self.__data.mW, self.__data.mH, 1))
 
-        for k in range(1):
-            for j in range(self.__data.mH):
-                for i in range(self.__data.mW):
-                    x[i, j, k] = x_coords[i]
-                    y[i, j, k] = y_coords[j]
+        for j in range(self.__data.mW):
+            for i in range(self.__data.mH):
+                x[j, i, 0] = x_coords[j]
+                y[j, i, 0] = y_coords[i]
+                temp_matrix[j, i, 0] = temp[i + j * self.__data.mH]
 
-        temp = np.asarray(temp).reshape((self.__data.mW, self.__data.mH, 1))
-
-        vtk_export.gridToVTK(path, x, y, z, pointData={"Temperature": temp})
+        vtk_export.gridToVTK(path, x, y, z, pointData={"Temperature": temp_matrix})
