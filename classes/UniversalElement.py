@@ -5,18 +5,27 @@ from classes.Element import Element
 # TODO: try to make universal element for specified gaussian level(2., 3.)
 class UniversalElement:
 
-    def __init__(self):
+    def __init__(self, gauss_level: int = 2):
+        """
+        Creates class with defined gauss level.
+        :param gauss_level: number larger than zero
+        """
+
         #for 2d element
-        self.__dN_dksi_matrix = np.zeros((4, 4))    # for 4 nodes in element
-        self.__dN_deta_matrix = np.zeros((4, 4))
-        self.__N_matrix = np.zeros((4, 4))
+        self.__gauss_level = gauss_level
+        self.__dN_dksi_matrix = np.zeros((gauss_level ** 2, 4))    # for 4 nodes in element
+        self.__dN_deta_matrix = np.zeros((gauss_level ** 2, 4))
+        self.__N_matrix = np.zeros((gauss_level ** 2, 4))
+        self.__weights = []
         self.__create_matrices()
 
     def __create_matrices(self):
-        integral_points = ((funConst.gauss_points[0][0][0], funConst.gauss_points[0][0][0]), \
-                        (funConst.gauss_points[0][1][0], funConst.gauss_points[0][0][0]), \
-                        (funConst.gauss_points[0][1][0], funConst.gauss_points[0][1][0]), \
-                        (funConst.gauss_points[0][0][0], funConst.gauss_points[0][1][0]))
+        #crating integral points and weights
+        integral_points = []
+        for ksi_ip, ksi_weight in funConst.gauss_points[self.__gauss_level - 1]:
+            for eta_ip, eta_weight in funConst.gauss_points[self.__gauss_level - 1]:
+                integral_points.append((ksi_ip, eta_ip))
+                self.__weights.append((ksi_weight, eta_weight))
 
         #creating dN_dksi_matrix
         for point, array in enumerate(self.__dN_dksi_matrix):
@@ -59,4 +68,16 @@ class UniversalElement:
     @property
     def N(self):
         return self.__N_matrix
+
+    @property
+    def Weights(self):
+        return self.__weights
+
+    @property
+    def IP_count(self):
+        return self.__gauss_level ** 2
+
+    @property
+    def Gauss_level(self):
+        return self.__gauss_level
 

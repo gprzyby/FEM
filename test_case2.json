@@ -8,7 +8,7 @@
   "conductivity": 25,
   "density": 7800,
   "specific_heat": 700,
-  "simulation_time": 20,
+  "simulation_time": 100,
   "step_time": 1,
   "initial_temp": 100
 }
