@@ -29,11 +29,8 @@ class Element(object):
 
     #__setitem__ deleted for safety reasons(to have identity with grid class)
 
-    def __str__(self):
-        return "E id:{}, elements:".format(self.__id) + str(self.__nodes)
-
     def __repr__(self):
-        return str(self)
+        return "E id:{}, elements:".format(self.__id) + str(self.__nodes)
 
     def points_coordinates_vector(self):
         x = [node.x for node in self.__nodes]

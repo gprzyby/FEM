@@ -2,7 +2,6 @@ import numpy as np
 import classes.Functions_Const as funConst
 from classes.Element import Element
 
-# TODO: try to make universal element for specified gaussian level(2., 3.)
 class UniversalElement:
 
     def __init__(self, gauss_level: int = 2):

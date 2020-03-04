@@ -1,7 +1,6 @@
 from classes.Node import Node
 from classes.Element import Element
 import json
-import evtk.hl as vtk_export
 import numpy as np
 
 class Grid:
@@ -77,6 +76,8 @@ class Grid:
             json.dump(self.__data.__dict__, file)
 
     def saveToVTK(self, path: str):
+        import evtk.hl as vtk_export
+
         x_coords = [node.x for node in self.__nodes[::self.__data.mH]]
         y_coords = [node.y for node in self.__nodes[:self.__data.mH:]]
         temp = [node.value for node in self.__nodes]

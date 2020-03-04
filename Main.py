@@ -8,17 +8,6 @@ import classes.Calculations as calc
 import sys
 import json
 
-"""
-    uzyte warstwy scian:
-    zwykla sciana nieocieplona: 15 mm tynku betonowego(ściślej mówiąć cementowo-wapienny)
-                                25 cm muru ceglanego
-    ściana ocieplona:   15 mm tynku betonowego(ściślej mówiąć cementowo-wapienny)
-                        25 cm muru ceglanego  
-                        5 cm styropianu
-    ściana starego domu:    25 mm tynku betonowego
-                            30 cm drewna
-"""
-
 
 def building_wall_simulation():
     univ_elem = UniversalElement()
@@ -66,22 +55,9 @@ def main():
         grid = Grid.LoadFromData(file_path)
         with open(sys.argv[1]) as data_file:
             data_json = json.load(data_file)
-            alpha = data_json["alpha"]
-            ambient_temp = data_json["ambient_temp"]
-            conductivity = data_json["conductivity"]
-            specific_heat = data_json["specific_heat"]
-            density = data_json["density"]
-            simulation_time = data_json["simulation_time"]
-            simulation_step = data_json["step_time"]
-            initial_temp = data_json["initial_temp"]
-            boundary_info = {0: {"alpha": alpha, "ambient_temp": ambient_temp},
-                             1: {"alpha": alpha, "ambient_temp": ambient_temp},
-                             2: {"alpha": alpha, "ambient_temp": ambient_temp},
-                             3: {"alpha": alpha, "ambient_temp": ambient_temp}}
-            # setting last layer bigger to eliminate float error
-            layer_info = [[grid.get_spec().W + 1, {"conductivity": conductivity, "density": density, "specific_heat": specific_heat}]]
             univ_elem = UniversalElement(4)
-            calc.simulate_heat_transfer(grid, univ_elem, initial_temp, simulation_time, simulation_step, layer_info, boundary_info)
+            calc.isotropic_heat_transfer_simulation(grid, univ_elem, **data_json)
+
             #save to vtk
             if(len(sys.argv) == 3):
                 grid.saveToVTK(sys.argv[2])

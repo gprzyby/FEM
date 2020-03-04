@@ -8,9 +8,9 @@ import numpy as np
 
 def __calculate_property_for_integral_points(elem: Element, univ_el: UniversalElement, layer_info: dict,
                                              property_name: str) -> list:
-    property_for_ip = []    # table to collect property value for integral point
-    pos_x_for_ip = []       # table to store real x position of integral point
-    x_pos, _ = elem.points_coordinates_vector()     # getting x coordinates of element nodes
+    property_for_ip = []  # table to collect property value for integral point
+    pos_x_for_ip = []  # table to store real x position of integral point
+    x_pos, _ = elem.points_coordinates_vector()  # getting x coordinates of element nodes
 
     # calculating global pos of integral points(here only x coord)
     for shape_fun_vector in univ_el.N:
@@ -169,7 +169,8 @@ def calculate_p_matrix(elem: Element, univ_elem: UniversalElement, boundaries_in
     # creating form functions for 1d
     N = np.zeros(shape=(2, 1))
     for integral_point, weight in (gauss_points for gauss_points in consts.gauss_points[univ_elem.Gauss_level - 1]):
-        P_subvector = np.array([[consts.shape1d_fun[0](integral_point), consts.shape1d_fun[1](integral_point)]]).reshape(2, 1)
+        P_subvector = np.array(
+            [[consts.shape1d_fun[0](integral_point), consts.shape1d_fun[1](integral_point)]]).reshape(2, 1)
         N += P_subvector * weight
 
     # combining matrices
@@ -180,7 +181,7 @@ def calculate_p_matrix(elem: Element, univ_elem: UniversalElement, boundaries_in
                                              boundaries_info[bc_index]["ambient_temp"]
         else:
             P[::-3, 0:1] += N * edges_jacobians[bc_index] * boundaries_info[bc_index]["alpha"] * \
-                             boundaries_info[bc_index]["ambient_temp"]
+                            boundaries_info[bc_index]["ambient_temp"]
 
     P *= -1
     return P
@@ -235,13 +236,14 @@ def calculate_p_global(grid: Grid, univ_ele: UniversalElement, boundaries_info: 
     return global_p
 
 
-def simulate_heat_transfer(grid: Grid, univ_elem: UniversalElement, initial_temp: float, simulation_time: float, step_time: float, layer_info: list,
-                           boundaries_info: dict):
-    #vector t0
+def simulate_heat_transfer(grid: Grid, univ_elem: UniversalElement, initial_temp: float, simulation_time: float,
+                           step_time: float, layer_info: list,
+                           boundaries_info: dict, **kwargs):
+    # vector t0
     nodes_temp = np.array([[initial_temp for _ in range(grid.get_spec().mN)]]).reshape((grid.get_spec().mN, 1))
     steps = (int)(simulation_time / step_time)
-    #list to store simulation time in every step
-    steps_times = [(step + 1) * step_time for step in range(steps)]
+    # list to store simulation time in every step
+    steps_times = ((step + 1) * step_time for step in range(steps))
     global_h = calculate_h_global(grid, univ_elem, layer_info, boundaries_info)
     global_c = calculate_c_global(grid, univ_elem, layer_info)
     global_p = calculate_p_global(grid, univ_elem, boundaries_info)
@@ -257,3 +259,15 @@ def simulate_heat_transfer(grid: Grid, univ_elem: UniversalElement, initial_temp
         grid.getNode(node_id + 1).value = temp[0]
     return nodes_temp
 
+
+def isotropic_heat_transfer_simulation(grid: Grid, univ_elem: UniversalElement, **simulation_data):
+    boundary_data = {i: {"alpha": simulation_data["alpha"], "ambient_temp": simulation_data["ambient_temp"]}
+                     for i in range(4)}
+
+    layer_info = [
+                    [grid.get_spec().W + 1, {"conductivity": simulation_data["conductivity"],
+                                             "density": simulation_data["density"],
+                                             "specific_heat": simulation_data["specific_heat"]} ]
+                 ]
+
+    simulate_heat_transfer(grid, univ_elem, boundaries_info=boundary_data, layer_info=layer_info, **simulation_data)
