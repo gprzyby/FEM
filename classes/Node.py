@@ -48,9 +48,6 @@ class Node(object):
     def BC(self, new_value: float):
         self.__BC = new_value
 
-    def __str__(self):
-        return "N(id:{}, x:{}, y:{}, value:{}, BC:{})".format(self.__id, self.__x, self.__y, self.__value, self.__BC)
-
     def __repr__(self):
-        return str(self)
+        return "N(id:{}, x:{}, y:{}, value:{}, BC:{})".format(self.__id, self.__x, self.__y, self.__value, self.__BC)
 

@@ -1,5 +1,6 @@
 from classes.Node import Node
 
+
 class Element(object):
 
     def __init__(self, id: int, nodes_num: int, node_list: [Node] = None):
